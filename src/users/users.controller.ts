@@ -1,33 +1,61 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { UserCreateDto, UserResponseDto } from './dto/user.dto';
 import { UsersService } from './users.service';
+import { AvatarService } from 'src/avatar/avatar.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService) {}
+  constructor(
+    private readonly userService: UsersService,
+    private readonly avatarService: AvatarService,
+  ) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  async create(@Body() createUserDto: UserCreateDto): Promise<UserResponseDto> {
+    const user = await this.userService.create(createUserDto);
+
+    return plainToInstance(UserResponseDto, user);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.userService.findAll();
-  // }
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    const user = await this.userService.findOne(+id);
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.userService.findOne(+id);
-  // }
+    if (!user) {
+      throw new NotFoundException('No user with given id');
+    }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.userService.update(+id, updateUserDto);
-  // }
+    return plainToInstance(UserResponseDto, user);
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.userService.remove(+id);
-  // }
+  @Get(':id/avatar')
+  async getAvatar(@Param('id') id: string): Promise<string> {
+    const user = await this.userService.findOne(+id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.avatarService.get(user);
+  }
+
+  @Delete(':id/avatar')
+  async deleteAvatar(@Param('id') id: string) {
+    const user = await this.userService.findOne(+id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.avatarService.deleteByUserId(user.id);
+  }
 }

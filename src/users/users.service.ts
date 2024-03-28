@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MailService } from 'src/mail/mail.service';
+import { ReqResUser, fetchUser } from 'src/reqres';
 import { QueueService } from '../queue/queue.service';
 import { Event } from '../queue/types';
-import { CreateUserDto } from './dto/create-user.dto';
+import { UserCreateDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -15,7 +16,7 @@ export class UsersService {
     private readonly queueService: QueueService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: UserCreateDto) {
     const user = new this.userModel(createUserDto);
     const savedUser = await user.save();
 
@@ -32,19 +33,13 @@ export class UsersService {
     return savedUser;
   }
 
-  // findAll() {
-  //   return `This action returns all user`;
-  // }
+  async findOne(id: number): Promise<ReqResUser | null> {
+    try {
+      const user = await fetchUser(id);
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
-
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+      return user;
+    } catch {
+      return null;
+    }
+  }
 }

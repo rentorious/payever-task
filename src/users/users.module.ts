@@ -5,12 +5,14 @@ import { User, UserSchema } from './entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { QueueModule } from 'src/queue/queue.module';
+import { DownloaderModule } from 'src/avatar/avatar.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     QueueModule,
     MailModule,
+    DownloaderModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

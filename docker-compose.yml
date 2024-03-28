@@ -1,0 +1,11 @@
+version: '3.9'
+services:
+  mailhog:
+    image: mailhog/mailhog
+    platform: linux/amd64
+    logging:
+      driver: 'none'
+    ports:
+      - '${MAILHOG_PORT:-1025}:1025'
+      - '${MAILHOG_CONSOLE_PORT:-8025}:8025'
+  rabbimq:

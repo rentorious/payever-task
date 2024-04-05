@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AvatarService } from './avatar.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Avatar, AvatarSchema } from './entities/avatar.entity';
+import { Avatar } from './entities/avatar.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Avatar.name, schema: AvatarSchema }]),
-  ],
+  imports: [TypeOrmModule.forFeature([Avatar])],
   providers: [AvatarService],
   exports: [AvatarService],
 })

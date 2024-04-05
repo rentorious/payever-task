@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
 import axios from 'axios';
 import * as fs from 'fs';
-import { Model } from 'mongoose';
 import * as path from 'path';
 import { ReqResUser } from 'src/reqres';
 import { AvatarCreateDto } from './dto/avatar.dto';
 import { Avatar } from './entities/avatar.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AvatarService {
@@ -15,7 +15,8 @@ export class AvatarService {
 
   constructor(
     private readonly config: ConfigService,
-    @InjectModel(Avatar.name) private readonly avatarModel: Model<Avatar>,
+    @InjectRepository(Avatar)
+    private readonly avatarRepository: Repository<Avatar>,
   ) {
     const dirName = config.get<string>('downloadDir');
 
@@ -27,17 +28,20 @@ export class AvatarService {
   }
 
   async findByUserId(userId: number): Promise<Avatar | null> {
-    return this.avatarModel.findOne({ userId });
+    return this.avatarRepository.findOne({ where: { userId } });
   }
 
   async create(dto: AvatarCreateDto): Promise<Avatar | null> {
-    const avatar = new this.avatarModel(dto);
+    const avatar = new Avatar();
 
-    return avatar.save();
+    avatar.hash = dto.hash;
+    avatar.userId = dto.userId;
+
+    return this.avatarRepository.save(avatar);
   }
 
   async deleteByUserId(userId: number) {
-    const avatar = this.avatarModel.findOne({ userId });
+    const avatar = this.avatarRepository.findOneBy({ userId });
 
     if (!avatar) {
       throw new NotFoundException('Avatar not found');
@@ -51,7 +55,7 @@ export class AvatarService {
       throw new NotFoundException('File not found');
     }
 
-    return this.avatarModel.deleteOne({ userId });
+    return this.avatarRepository.delete({ userId });
   }
 
   async get(user: ReqResUser): Promise<string> {

@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from 'src/mail/mail.module';
-import { User, UserSchema } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { QueueModule } from 'src/queue/queue.module';
 import { DownloaderModule } from 'src/avatar/avatar.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    TypeOrmModule.forFeature([User]),
     QueueModule,
     MailModule,
     DownloaderModule,

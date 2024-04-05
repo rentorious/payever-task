@@ -1,24 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { MailService } from 'src/mail/mail.service';
 import { ReqResUser, fetchUser } from 'src/reqres';
 import { QueueService } from '../queue/queue.service';
 import { Event } from '../queue/types';
 import { UserCreateDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly mailService: MailService,
     private readonly queueService: QueueService,
   ) {}
 
   async create(createUserDto: UserCreateDto) {
-    const user = new this.userModel(createUserDto);
-    const savedUser = await user.save();
+    const user = new User();
+    user.email = createUserDto.email;
+    user.first_name = createUserDto.first_name;
+    user.last_name = createUserDto.last_name;
+    const savedUser = await this.userRepository.save(user);
 
     const mailId = await this.mailService.send(
       savedUser.email,

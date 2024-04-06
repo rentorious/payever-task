@@ -18,7 +18,11 @@ import queue from './config/queue';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => config.get('db'),
+      useFactory: async (config: ConfigService) => {
+        console.log('GASFASDASDASDASDASDSAD', config.get('db'));
+
+        return config.get('db');
+      },
     }),
     UsersModule,
   ],

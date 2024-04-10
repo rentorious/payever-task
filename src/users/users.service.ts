@@ -1,39 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { MailService } from 'src/mail/mail.service';
-import { ReqResUser, fetchUser } from 'src/reqres';
+import {
+  Injectable,
+  Logger,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
 import { QueueService } from '../queue/queue.service';
 import { Event } from '../queue/types';
+import { ReqResUser, fetchUser } from '../reqres';
 import { UserCreateDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ErrorCodes } from '../utils';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly mailService: MailService,
     private readonly queueService: QueueService,
   ) {}
 
-  async create(createUserDto: UserCreateDto) {
-    const user = new User();
-    user.email = createUserDto.email;
-    user.first_name = createUserDto.first_name;
-    user.last_name = createUserDto.last_name;
-    const savedUser = await this.userRepository.save(user);
+  async create(dto: UserCreateDto) {
+    try {
+      const user = new this.userModel(dto);
+      const savedUser = await user.save();
 
-    const mailId = await this.mailService.send(
-      savedUser.email,
-      'Welcome',
-      `Welcome ${user.first_name}`,
-    );
+      const mailId = await this.mailService.send(
+        savedUser.email,
+        'Welcome',
+        `Welcome ${user.first_name}`,
+      );
 
-    console.log(`Message sent with id ${mailId}`);
+      Logger.log(`Message sent with id ${mailId}`);
 
-    this.queueService.sendEvent(Event.UserCreated, user);
+      this.queueService.sendEvent(Event.UserCreated, user);
 
-    return savedUser;
+      return savedUser;
+    } catch (err) {
+      if (err.code === ErrorCodes.DuplicateKey) {
+        throw new UnprocessableEntityException('User already exists');
+      }
+      throw new UnprocessableEntityException('Failed to create a user');
+    }
   }
 
   async findOne(id: number): Promise<ReqResUser | null> {

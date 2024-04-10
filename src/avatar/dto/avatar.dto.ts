@@ -9,3 +9,9 @@ export class AvatarCreateDto {
   @IsString()
   hash: string;
 }
+
+export class AvatarResponseDto {
+  @IsNotEmpty()
+  @IsString()
+  hash!: string;
+}

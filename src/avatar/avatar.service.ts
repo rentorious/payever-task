@@ -6,56 +6,50 @@ import * as path from 'path';
 import { ReqResUser } from 'src/reqres';
 import { AvatarCreateDto } from './dto/avatar.dto';
 import { Avatar } from './entities/avatar.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class AvatarService {
-  private readonly downloadDir;
+  private readonly dirName;
 
   constructor(
     private readonly config: ConfigService,
-    @InjectRepository(Avatar)
-    private readonly avatarRepository: Repository<Avatar>,
+    @InjectModel(Avatar.name)
+    private readonly avatarModel: Model<Avatar>,
   ) {
-    const dirName = config.get<string>('downloadDir');
+    this.dirName = config.get<string>('downloadDir');
+    const downloadDir = this.getDownloadDir();
 
-    this.downloadDir = path.resolve(__dirname, '..', dirName);
-
-    if (!fs.existsSync(this.downloadDir)) {
-      fs.mkdirSync(this.downloadDir);
+    if (!fs.existsSync(downloadDir)) {
+      fs.mkdirSync(downloadDir);
     }
   }
 
   async findByUserId(userId: number): Promise<Avatar | null> {
-    return this.avatarRepository.findOne({ where: { userId } });
+    return this.avatarModel.findOne({ userId });
   }
 
   async create(dto: AvatarCreateDto): Promise<Avatar | null> {
-    const avatar = new Avatar();
+    const avatar = new this.avatarModel(dto);
 
-    avatar.hash = dto.hash;
-    avatar.userId = dto.userId;
-
-    return this.avatarRepository.save(avatar);
+    return avatar.save();
   }
 
   async deleteByUserId(userId: number) {
-    const avatar = this.avatarRepository.findOneBy({ userId });
+    const avatar = await this.findByUserId(userId);
 
     if (!avatar) {
       throw new NotFoundException('Avatar not found');
     }
 
-    const filePath = path.resolve(this.downloadDir, userId.toString());
+    const filePath = path.resolve(this.getDownloadDir(), userId.toString());
 
-    try {
-      await fs.promises.unlink(filePath);
-    } catch {
-      throw new NotFoundException('File not found');
-    }
+    this.deleteFile(filePath);
 
-    return this.avatarRepository.delete({ userId });
+    await this.avatarModel.deleteOne({ userId });
+
+    return avatar;
   }
 
   async get(user: ReqResUser): Promise<string> {
@@ -66,6 +60,7 @@ export class AvatarService {
     }
 
     const buffer = await this.download(user);
+
     const hash = buffer.toString('base64');
 
     await this.create({ userId: user.id, hash });
@@ -74,7 +69,7 @@ export class AvatarService {
   }
 
   async download(user: ReqResUser): Promise<Buffer> {
-    const filePath = path.resolve(this.downloadDir, user.id.toString());
+    const filePath = path.resolve(this.dirName, user.id.toString());
 
     const writer = fs.createWriteStream(filePath);
 
@@ -87,10 +82,22 @@ export class AvatarService {
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on('finish', () => resolve(this.downloadDir));
+      writer.on('finish', () => {});
       writer.on('error', reject);
     });
 
     return fs.promises.readFile(filePath);
+  }
+
+  protected getDownloadDir() {
+    return path.resolve(__dirname, '..', this.dirName);
+  }
+
+  protected async deleteFile(filePath: string) {
+    try {
+      await fs.promises.unlink(filePath);
+    } catch {
+      throw new NotFoundException('File not found');
+    }
   }
 }

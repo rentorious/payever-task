@@ -8,9 +8,9 @@ import {
   Post,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { AvatarService } from '../avatar/avatar.service';
 import { UserCreateDto, UserResponseDto } from './dto/user.dto';
 import { UsersService } from './users.service';
-import { AvatarService } from 'src/avatar/avatar.service';
 
 @Controller('users')
 export class UsersController {

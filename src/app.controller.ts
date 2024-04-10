@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { AppService } from './app.service';
 import { UserCreateDto } from './users/dto/user.dto';
@@ -10,6 +10,6 @@ export class AppController {
 
   @EventPattern(Event.UserCreated)
   handleUserCreated(@Payload() user: UserCreateDto) {
-    console.log('Created a new user', user);
+    Logger.log('Created a new user', user);
   }
 }

@@ -4,9 +4,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { config } from './config';
 import { UsersModule } from './users/users.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import db from './config/db';
 import queue from './config/queue';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -15,14 +15,10 @@ import queue from './config/queue';
       cache: true,
       load: [config, db, queue],
     }),
-    TypeOrmModule.forRootAsync({
+    MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => {
-        console.log('GASFASDASDASDASDASDSAD', config.get('db'));
-
-        return config.get('db');
-      },
+      useFactory: async (config: ConfigService) => config.get('db'),
     }),
     UsersModule,
   ],

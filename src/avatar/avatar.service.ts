@@ -82,7 +82,7 @@ export class AvatarService {
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on('finish', () => {});
+      writer.on('finish', () => resolve(null));
       writer.on('error', reject);
     });
 

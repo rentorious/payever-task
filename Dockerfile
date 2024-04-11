@@ -2,6 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN mkdir /app/avatars
+
 COPY package*.json ./
 
 RUN npm install
